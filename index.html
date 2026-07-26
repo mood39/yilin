@@ -288,22 +288,29 @@ grid.addEventListener("click",e=>{
 function listRes(hits,mark){
   const show=hits.slice(0,80);
   return `<p class="hint" style="margin:10px 0 2px">得 ${hits.length} 條${hits.length>80?"，列前八十":""}　點列見全辭</p>`+
-    show.map(([i,j])=>{
+    show.map(h=>{
+      const [i,j,inOrig,inBy]=h.length>2?h:[h[0],h[1],true,false];
       let t=G[i][j]||"（原缺）";
-      if(mark) t=t.split(mark).join(`<mark>${mark}</mark>`);
-      const by=YLBY[i][j];
+      if(mark&&inOrig!==false) t=t.split(mark).join(`<mark>${mark}</mark>`);
+      let by=YLBY[i][j];
+      if(mark&&inBy&&by) by=by.split(mark).join(`<mark>${mark}</mark>`);
       return `<div class="res" data-i="${i}" data-j="${j}">
-        <span class="k">${N[i]} 之 ${N[j]}</span><span class="t">${t}${by?`<br><span style="color:var(--bamboo);font-size:13px">今譯：${by}</span>`:""}</span></div>`;
+        <span class="k">${N[i]} 之 ${N[j]}${inBy&&!inOrig?' <span class="hint" style="font-size:11px">（今譯命中）</span>':""}</span>
+        <span class="t">${t}${by?`<br><span style="color:var(--bamboo);font-size:13px">今譯：${by}</span>`:""}</span></div>`;
     }).join("");
 }
 function doQuery(){
   const q=$("#qInp").value.trim();
   if(!q){$("#qOut").innerHTML="";return;}
   const hits=[];
-  for(let i=0;i<64;i++) for(let j=0;j<64;j++) if(G[i][j]&&G[i][j].includes(q)) hits.push([i,j]);
+  for(let i=0;i<64;i++) for(let j=0;j<64;j++){
+    const inOrig=G[i][j]&&G[i][j].includes(q);
+    const inBy=YLBY[i][j]&&YLBY[i][j].includes(q);
+    if(inOrig||inBy) hits.push([i,j,inOrig,inBy]);
+  }
   $("#qOut").innerHTML = hits.length
     ? listRes(hits,q)
-    : `<p class="hint" style="margin-top:10px">四千零九十三條林辭中查無「${q}」。可改用單字，或試較常見之語。</p>`;
+    : `<p class="hint" style="margin-top:10px">四千零九十三條林辭與今譯中查無「${q}」。可改用單字，或試較常見之語。</p>`;
 }
 $("#btnQ").addEventListener("click",doQuery);
 $("#qInp").addEventListener("keydown",e=>{if(e.key==="Enter")doQuery();});
